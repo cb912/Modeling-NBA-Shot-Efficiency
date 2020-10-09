@@ -7,8 +7,22 @@ output: pdf_document
 
 ### Section 1. Introduction
 
+```{r}
+library(tidyverse)
+library(broom)
+library(knitr)
+```
+```{r}
+shots <- read_csv("data/shot_logs.csv")
+```
+
+
 ### Section 2. Data description
 
 ### Section 3. Glimpse of data 
+
+```{r}
+glimpse(shots)
+```
 
 
