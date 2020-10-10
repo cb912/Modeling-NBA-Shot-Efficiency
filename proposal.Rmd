@@ -1,7 +1,7 @@
 ---
 title: "Project proposal"
-author: "Team Name: Team member 1, Team member 2, Team member 3, Team member 4"
-date: "Update date"
+author: "Statguys: Lewie Eatherton, Charlie Bonetti, Chris Yang"
+date: "10/9/2020"
 output: pdf_document
 ---
 
@@ -15,6 +15,8 @@ library(knitr)
 ```{r}
 shots <- read_csv("data/shot_logs.csv")
 ```
+
+We are interested in looking at how certain variables affect NBA shot efficiency. We are all NBA fans and we are curious about what makes a good shot versus a bad shot. We are excited to explore if there are certain factors that surprisingly have an effect versus other factors that surprisingly don’t have an effect. One article that we were intrigued by is how different shot types affected shot success across different levels of competition (1). We found it interesting how there were no discernable differences between different situational variables on shot type and shot success between levels. Since the effect of situation variables on shot success seemed to be constant throughout all levels of competition, we wanted to see what exactly situation variables might be and how great their effects are. As a result, we formulated our research question: Do certain situational variables during a game have an effect on an NBA player’s shot success? Given that basketball players and coaches deem some shots as “good shots” and some as “bad” and given our intuition about basketball, we hypothesize that some situational variables (like shot distance or the distance of the closest defender) will have a greater effect on an NBA player’s shot success than other situational variables.
 
 
 ### Section 2. Data description
