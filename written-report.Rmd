@@ -1,7 +1,7 @@
 ---
-title: "Your project title"
-author: "Team Name: Team member 1, Team member 2, Team member 3, Team member 4"
-date: "Update date"
+title: "Modeling Shot Efficiency in the NBA "
+author: "Stat guys: Lewis Eatherton, Team member 2, Team member 3, Team member 4"
+date: "10/28/20"
 output: pdf_document
 ---
 
@@ -9,7 +9,108 @@ output: pdf_document
 knitr::opts_chunk$set(echo = FALSE, 
                       warning = FALSE, 
                       message = FALSE)
+
+library(tidyverse)
+library(knitr)
+library(broom)
+library(leaps)
+shots <- read_csv("data/shot_logs.csv")
 ```
 
 Your written report goes here! Before you submit, make sure your code chunks are turned off with `echo = FALSE` and there are no warnings or messages with `warning = FALSE` and `message = FALSE` 
+
+### Introduction and EDA
+
+
+
+
+
+```{r}
+### Data cleaning
+shots <- shots %>%
+  mutate(Make = case_when(
+    SHOT_RESULT == "made" ~ 1,
+    SHOT_RESULT == "missed" ~ 0))
+
+shots <- shots %>%
+  mutate(Make = as.factor(Make))
+```
+
+
+```{r}
+##Checking conditions
+
+### Linearity
+library(Stat2Data)
+
+emplogitplot1(Make ~ SHOT_CLOCK, data = shots, 
+              ngroups = 5)
+
+emplogitplot1(Make ~ CLOSE_DEF_DIST, data = shots, 
+              ngroups = 10)
+
+emplogitplot1(Make ~ SHOT_DIST, data = shots, 
+              ngroups = 10)
+
+emplogitplot1(Make ~ TOUCH_TIME, data = shots, 
+              ngroups = 10)
+
+
+shots %>%
+  count(CLOSEST_DEFENDER, Make) %>%
+  group_by(CLOSEST_DEFENDER) %>%
+  mutate(prop = n/sum(n)) %>%
+  filter(Make == "1") %>%
+  mutate(emp_logit = log(prop/(1-prop)))
+
+
+shots_players <- shots %>%
+  filter(CLOSEST_DEFENDER == "Leonard, Kawhi"| CLOSEST_DEFENDER ==  "Curry, Stephen")
+
+shots_players <- shots_players %>%
+  filter(CLOSE_DEF_DIST < 5)
+
+shots_players <- shots_players %>%
+  mutate(Make = as.factor(Make))
+
+shots_players <- shots_players %>%
+  mutate(CLOSEST_DEFENDER = as.factor(CLOSEST_DEFENDER))
+
+emplogitplot2(Make ~ CLOSE_DEF_DIST + CLOSEST_DEFENDER, data = shots_players)
+
+```
+
+### Creating Model
+```{r}
+
+full_mod <- glm(Make ~ SHOT_CLOCK + DRIBBLES + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST, data = shots, family = "binomial")
+
+drop1(full_mod)
+
+
+
+full_mod <- glm(Make ~ SHOT_CLOCK + DRIBBLES + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST + CLOSEST_DEFENDER, data = shots_players, family = "binomial")
+
+drop1(full_mod)
+
+current <- glm(Make ~ SHOT_CLOCK + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST + CLOSEST_DEFENDER, data = shots_players, family = "binomial")
+drop1(current)
+
+current <- glm(Make ~ SHOT_CLOCK + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST, data = shots_players, family = "binomial")
+drop1(current)
+
+current <- glm(Make ~ SHOT_CLOCK + SHOT_DIST + CLOSE_DEF_DIST, data = shots_players, family = "binomial")
+drop1(current)
+
+current_interaction <- glm(Make ~ SHOT_CLOCK + SHOT_DIST + CLOSE_DEF_DIST + CLOSE_DEF_DIST * CLOSEST_DEFENDER, data = shots_players, family = "binomial")
+
+anova(current, current_interaction, test = "Chisq") %>%
+  tidy()
+
+current%>%
+  tidy() %>%
+  kable(digits = 3)
+
+
+```
 
