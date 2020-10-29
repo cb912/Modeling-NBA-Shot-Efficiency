@@ -1,6 +1,6 @@
 ---
 title: "Modeling Shot Efficiency in the NBA "
-author: "Stat guys: Lewis Eatherton, Team member 2, Team member 3, Team member 4"
+author: "Stat guys: Lewis Eatherton, Chris Yang, Charlie Bonetti"
 date: "10/28/20"
 output: pdf_document
 ---
@@ -21,9 +21,7 @@ Your written report goes here! Before you submit, make sure your code chunks are
 
 ### Introduction and EDA
 
-
-talk about why we chose this topic and what our expectations our... similar to proposal
-
+For our STA 210 Final Project, our group is interested in investigating how certain variables may have an influence on a basketball players’ shot efficiency in the National Basketball Association (NBA). We are all avid NBA fans and express great curiosity in what makes a good shot versus a bat shot. Thus, we are excited by the opportunity to explore whether or not certain factors exist which surprisingly have an effect on shot success versus other factors that surprisingly don’t have an effect. An 2015 article titled “Basketball Shot Types and Shot Success in Different Levels of Competitive Basketball” published by Frane Erčulj and Erik Štrumbel piqued our interest in this subject matter. We became intrigued by how different shot types affected shot success across different levels of competition. Additionally, it was insightful to learn that there were no discernable differences between different situational variables on shot type and shot success between levels. Since the effect of situation variables on shot success seemed to be constant throughout all levels of competition, we wanted to see what exactly the situation variables might be, and to what degree of influence they had on an individual’s shot. As a result, we formulated our research question: “Do certain situational variables during a game have an effect on an NBA player’s shot success?” Based on our prior knowledge of the game of basketball, we recognize that both players and coaches deem certain shots as “good shots” and some as “bad”. Furthermore, through our own intuition after watching countless games and playing the sport ourselves, we hypothesize that some situational variables (e.g. shot distance or the distance of the closest defender) will have a greater effect on an NBA player’s shot success than other situational variables.
 
 
 ```{r}
