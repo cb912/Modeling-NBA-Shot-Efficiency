@@ -19,10 +19,40 @@ shots <- read_csv("data/shot_logs.csv")
 
 Your written report goes here! Before you submit, make sure your code chunks are turned off with `echo = FALSE` and there are no warnings or messages with `warning = FALSE` and `message = FALSE` 
 
-### Introduction and EDA
+### Introduction
 
-For our STA 210 Final Project, our group is interested in investigating how certain variables may have an influence on a basketball players’ shot efficiency in the National Basketball Association (NBA). We are all avid NBA fans and express great curiosity in what makes a good shot versus a bat shot. Thus, we are excited by the opportunity to explore whether or not certain factors exist which surprisingly have an effect on shot success versus other factors that surprisingly don’t have an effect. An 2015 article titled “Basketball Shot Types and Shot Success in Different Levels of Competitive Basketball” published by Frane Erčulj and Erik Štrumbel piqued our interest in this subject matter. We became intrigued by how different shot types affected shot success across different levels of competition. Additionally, it was insightful to learn that there were no discernable differences between different situational variables on shot type and shot success between levels. Since the effect of situation variables on shot success seemed to be constant throughout all levels of competition, we wanted to see what exactly the situation variables might be, and to what degree of influence they had on an individual’s shot. As a result, we formulated our research question: “Do certain situational variables during a game have an effect on an NBA player’s shot success?” Based on our prior knowledge of the game of basketball, we recognize that both players and coaches deem certain shots as “good shots” and some as “bad”. Furthermore, through our own intuition after watching countless games and playing the sport ourselves, we hypothesize that some situational variables (e.g. shot distance or the distance of the closest defender) will have a greater effect on an NBA player’s shot success than other situational variables.
+For our STA 210 Final Project, our group is interested in investigating how certain factors may have an influence on a basketball players’ shot efficiency during a game in the National Basketball Association (NBA). We are all avid NBA fans and express great curiosity in what makes a good shot versus a bad shot. This is an exciting opportunity to explore the presence or absence of certain variables which surprisingly, or unsurprisingly, have an effect on shot success. 
 
+Our interest in this subject matter was piqued by an 2015 article titled “Basketball Shot Types and Shot Success in Different Levels of Competitive Basketball” published by Frane Erčulj and Erik Štrumbel, which looked into how different shot types affected shot success across different levels of competition. It was insightful to learn that there were no discernable differences between different situational variables (e.g. player type, shot location) on shot type and shot success between levels. Since the effect of situation variables on shot success seemed to be constant throughout all levels of competition, we became motivated to identify what exactly the situation variables might be, and to what degree of influence they had on an individual’s shot. 
+
+As a result, we formulated our research question: “Do certain situational variables during a game have an effect on an NBA player’s shot success?” Based on our prior knowledge of the game of basketball, we recognize that both players and coaches deem certain shots as “good shots” and some as “bad”. Yet, what exactly characterizes these shots to fall under those two categories? Furthermore, through our own intuition after watching countless games and playing the sport ourselves, we hypothesize that some situational variables (e.g. shot distance or the distance of the closest defender) will have a greater effect on an NBA player’s shot success than other situational variables. It seems intuitive as the time left on the clock and distance to the defender decrease, the likelihood of making a shot increases. Seeking clarity in how these factors contribute to a successful shot are the key objectives of our analysis. 
+
+
+### Data
+
+In order to identify answers to our questions, we will explore data from the 2014-2015 National Basketball Association (NBA) season. The data was originally collected via NBA’s rest API, which scrapes historical data of past games off of the NBA website. All of the data was either recorded by player tracking via computer vision technique or by manual entry at an NBA scoring table.
+
+Each observation in our data set is a unique shot that was taken in an NBA basketball game during the 2014-2015 season. Features of each observation include qualities such as the game location, matchup, player name, and shot result. There are a total of 128,069 observations within the data set. The response variable we want to record is shot percentage. This value determines the likelihood of a successful shot when all predictor values are taken into consideration. 
+
+The response variable we are interested in investigating is:
+
+- `FGM`: Field Goal Made; whether the shot went in or not 
+
+The predictor variables that we expect to have an influence on the response variable are:
+
+- `Shot_number`: The shot number for that player in that specific game (8 would mean it was the player’s 8th shot in that game)
+- `Shot_clock (sec)`: How many seconds were left on the shot clock when the player shot the basketball
+- `Shot_distance (ft)`: How far away the player was from the basketball when shooting
+- `Dribbles`: The number of dribbles the player took before shooting
+- `Touch_time`: How long the player touched the ball for before shooting (after being passed to)
+- `PTS_TYPE`: Whether the shot was 2 or 3-pointer
+- `Closest_Defender`: Who the closest defender was to the shooting player
+- `Close_Def_Distance (ft)`: How far away the defender was from the player when the ball was shot 
+- `Player_name`: Who shot the ball
+
+```{r}
+glimpse(shots)
+```
 
 ```{r}
 ### Data cleaning
@@ -83,7 +113,6 @@ Linearity is not totally satisfied... graphs aren't linear
 
 independence and randomness seems fine accorind to how data was collected
 
-
 we should also look into collinearity
 
 ### Creating Model
@@ -92,7 +121,6 @@ we should also look into collinearity
 full_mod <- glm(Make ~ SHOT_CLOCK + DRIBBLES + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST, data = shots, family = "binomial")
 
 drop1(full_mod)
-
 
 
 full_mod <- glm(Make ~ SHOT_CLOCK + DRIBBLES + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST + CLOSEST_DEFENDER, data = shots_players, family = "binomial")
@@ -129,3 +157,7 @@ talk about final model outcome and how we came to it
 ###Discussion
 
 Talk about our results, the limitations of these results, and what'd we do differently...
+
+Work Citation:
+
+(1) Erčulj F, Štrumbelj E (2015) Basketball Shot Types and Shot Success in Different Levels of Competitive Basketball. PLoS ONE 10(6): e0128885. https://doi.org/10.1371/journal.pone.0128885
