@@ -66,7 +66,6 @@ shots <- shots %>%
   mutate(SHOT_SUCCESS = as.factor(SHOT_SUCCESS))
 ```
 
-
 ```{r}
 apply(apply(shots,2,is.na),2,sum)
 
