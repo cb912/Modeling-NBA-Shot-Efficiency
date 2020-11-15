@@ -18,7 +18,7 @@ theme_set(theme_bw())
 shots <- read_csv("data/shot_logs.csv")
 ```
 
-Your written report goes here! Before you submit, SHOT_SUCCESS sure your code chunks are turned off with `echo = FALSE` and there are no warnings or messages with `warning = FALSE` and `message = FALSE` 
+Your written report goes here! Before you submit, Make sure your code chunks are turned off with `echo = FALSE` and there are no warnings or messages with `warning = FALSE` and `message = FALSE` 
 
 ### Introduction
 
@@ -55,8 +55,8 @@ The predictor variables that we expect to have an influence on the response vari
 glimpse(shots)
 ```
 
+### Data Cleansing
 ```{r}
-### Data cleaning
 shots <- shots %>%
   mutate(SHOT_SUCCESS = case_when(
     SHOT_RESULT == "made" ~ 1,
@@ -65,29 +65,48 @@ shots <- shots %>%
 shots <- shots %>%
   mutate(SHOT_SUCCESS = as.factor(SHOT_SUCCESS))
 ```
-### Exploratory Data Analysis
+
 
 ```{r}
-p1 <- ggplot(data = shots, aes(x = `SHOT_SUCCESS`, y = `SHOT_DIST`)) +
+apply(apply(shots,2,is.na),2,sum)
+
+shots <- shots %>%
+  drop_na(SHOT_CLOCK)
+```
+Analysis of missing data reveals that only one variable contains unavailable values. To accommodate for this, we removed 5567 missing values from the dataset since they accounted for only `r 5567/128069 * 100` percent of all observations, which is an inconsequential amount. 
+
+### Exploratory Data Analysis
+```{r}
+p1 <- ggplot(data = shots, aes(x = SHOT_DIST), freq = TRUE) +
+  geom_histogram(fill = "darkorange") +
+  labs(x = "Shot Distance (ft)",
+       y = 'Number of Shots',
+       title = "Distribution of shots during 2014-2015 NBA season")
+
+p2 <- ggplot(data = shots, aes(x = SHOT_SUCCESS, y = SHOT_DIST)) +
   geom_boxplot(fill = "darkorange") + 
   labs(x = "Shot Success", 
-       y = "Shot Distance (feet)",
+       y = "Shot Distance (ft)",
        title = "Further away shots are more likely to miss") 
 
-p2 <- ggplot(shots, aes(x = SHOT_DIST, color = SHOT_SUCCESS)) + 
+p3 <- ggplot(shots, aes(x = SHOT_DIST, color = SHOT_SUCCESS)) + 
   geom_density() +
-  labs(x = "Shot Distance (feet)",
+  labs(x = "Shot Distance (ft)",
        y = "Proportion",
-       title = "2-Point shots are more likely to be made than 3-point shots")
+       title = "Density of 2-point shots versus 3-point shots")
 
+p1 + p2 + p3
+```
+
+```{r}
 p3 <- ggplot(data=shots, aes(x = SHOT_DIST, y= CLOSE_DEF_DIST)) + 
   geom_point(aes(color=SHOT_SUCCESS)) +
-  labs(x = "Distance from hoop",
+  labs(x = "Shot distance (ft)",
        y = "Distance from closest defender (ft)",
        title = "Made shots are closer to the basket and further away from the defender")
-  
-(p1 | p2 / p3)
+p3
 ```
+
 
 ```{r}
 ##Checking conditions
@@ -180,7 +199,8 @@ talk about final model outcome and how we came to it
 
 Limitations:
 
-1) There were several missing observations across several predictor variables in our analysis; for example, there were 5,567 unavailable values for the variable which counted the time left on the shot clock when the player shot the ball. This may have been due to recording error or instances where the shot clock was turned off. Given that 5,567 is marginal compared to the total number of observations (128,069), we chose to remove all rows containing NAs for this variable, as well as all others, from the dataset. The dataset wouldn't differ to a significant degree systematically compared to the larger population.
+1) Out of all predictor variables in analysis, only one variable had missing observations; there were 5,567 unavailable values for the variable which counted the time left on the shot clock when the player shot the ball. This may have been due to recording error or instances where the shot clock was turned off. Given that 5,567 is marginal compared to the total number of observations (128,069), we chose to remove all rows containing NAs for this variable from the dataset. As a result, The dataset wouldn't differ to a significant degree systematically compared to the larger population.
+2) The variable which quantified the number of seconds where a player touched the ball was negative 
 
 Next steps:
 
