@@ -17,11 +17,11 @@ library(leaps)
 shots <- read_csv("data/shot_logs.csv")
 ```
 
-Your written report goes here! Before you submit, make sure your code chunks are turned off with `echo = FALSE` and there are no warnings or messages with `warning = FALSE` and `message = FALSE` 
+Your written report goes here! Before you submit, SHOT_SUCCESS sure your code chunks are turned off with `echo = FALSE` and there are no warnings or messages with `warning = FALSE` and `message = FALSE` 
 
 ### Introduction
 
-For our STA 210 Final Project, our group is interested in investigating how certain factors may have an influence on a basketball players’ shot efficiency during a game in the National Basketball Association (NBA). We are all avid NBA enthusiasts and express great curiosity in what makes a good shot versus a bad shot. This is an exciting opportunity to explore the presence or absence of certain variables that surprisingly, or unsurprisingly, have an effect on scoring a basketball shot, also known as shot success.
+For our STA 210 Final Project, our group is interested in investigating how certain factors may have an influence on a basketball players’ shot efficiency during a game in the National Basketball Association (NBA). We are all avid NBA enthusiasts and express great curiosity in what SHOT_SUCCESSs a good shot versus a bad shot. This is an exciting opportunity to explore the presence or absence of certain variables that surprisingly, or unsurprisingly, have an effect on scoring a basketball shot, also known as shot success.
 
 Our interest in this subject matter was piqued by an 2015 article titled “Basketball Shot Types and Shot Success in Different Levels of Competitive Basketball” published by Frane Erčulj and Erik Štrumbel. The study described the effect of different shot types on shot success across different levels of competition. It was insightful to learn that there were no discernable differences between different situational variables, such as the type of player (e.g. Center) or where he shot the ball (e.g. in the paint) on shot success between levels. Since it was demonstrated that the effect of situation variables on shot success remained constant throughout all levels of competition, we were motivated to identify what exactly these situation variables might be, and to what degree of influence they had on an individual’s shot success. 
 
@@ -31,37 +31,50 @@ As a result, we formulated our research question: “Do certain situational vari
 
 To seek answers to our series of questions, we will explore data from the 2014-2015 National Basketball Association (NBA) season. The data was originally collected via the NBA API PHP Library, a software tool developed by Jason Roman which scrapes historical information of past games, including statistical data, from previous seasons off of the NBA website. The data from the NBA website was acquired via manual documentation by analysts at the scoring table during games as well as computer vision techniques that track numbers such as scores, assists, etc.
 
-Each observation in our data set is a unique shot that was taken in an NBA basketball game during the 2014-2015 season. Each observations is characterized by 21 features, including factors such as the game matchup, player name, and shot result. In total, there are 128,069 observations within the data set. For our project, the response variable of interest is shot percentage. This value determines the likelihood of a successful shot after all relevant predictor values are taken into consideration. 
+Each observation in our data set is a unique shot that was taken in an NBA basketball game during the 2014-2015 season. Each observations is characterized by 21 features, including factors such as the game matchup, player name, and shot result. In total, there are 128,069 observations within the data set. For our project, the response variable of interest is shot success. This value determines the likelihood of a successful shot after all relevant predictor values are taken into consideration. 
 
 The response variable we are interested in investigating is:
 
-- `Shot_result`: Whether the shot went in or not 
+- `SHOT_SUCCESS`: An indicator variable quantifying whether or not the shot was made.
 
 The predictor variables that we expect to have an influence on the response variable are:
 
-- `Shot_number`: The shot number for that player in that specific game (8 would mean it was the player’s 8th shot in that game)
-- `Shot_clock (sec)`: How many seconds were left on the shot clock when the player shot the basketball
-- `Shot_distance (ft)`: How far away the player was from the basketball when shooting
-- `Dribbles`: The number of dribbles the player took before shooting
-- `Touch_time`: How long the player touched the ball for before shooting (after being passed to)
+- `SHOT_NUMBER`: Shot number for a given player in a specific game (e.g. 8 denotes the player’s 8th shot in game)
+- `SHOT_CLOCK (SEC)`: Number of seconds left on the shot clock when the player shot the ball
+- `SHOT_DIST (FT)`: Distance in feet from the hoop when the player shot the ball 
+- `SHOT_RESULT`: Whether the shot was "made" or "missed"
+- `DRIBBLES`: Number of dribbles before the player shot the ball 
+- `TOUCH_TIME (SEC)`: Number of seconds before the player shot the ball (after being passed to)
 - `PTS_TYPE`: Whether the shot was 2 or 3-pointer
-- `Closest_Defender`: Who the closest defender was to the shooting player
-- `Close_Def_Distance (ft)`: How far away the defender was from the player when the ball was shot 
+- `CLOSEST_DEFENDER`: Who the closest defender was to the shooting player
+- `CLOSE_DEF_DIST`: Number of feet the defender was from the player when the ball was shot
 - `Player_name`: Who shot the ball
 
 ```{r}
 glimpse(shots)
 ```
 
+
 ```{r}
 ### Data cleaning
 shots <- shots %>%
-  mutate(Make = case_when(
+  mutate(SHOT_SUCCESS = case_when(
     SHOT_RESULT == "made" ~ 1,
     SHOT_RESULT == "missed" ~ 0))
 
 shots <- shots %>%
-  mutate(Make = as.factor(Make))
+  mutate(SHOT_SUCCESS = as.factor(SHOT_SUCCESS))
+```
+
+### Exploratory Data Analysis
+
+```{r}
+p1 <- ggplot(data = shots, aes(x = `SHOT_NUMBER`, y = `SHOT_DIST`)) +
+  geom_point() + 
+  labs(x = "Landmass", 
+       y = "Defense Budget",
+       title = "Defense Budget vs. Landmass")
+p1
 ```
 
 
@@ -71,24 +84,24 @@ shots <- shots %>%
 ### Linearity
 library(Stat2Data)
 
-emplogitplot1(Make ~ SHOT_CLOCK, data = shots, 
+emplogitplot1(SHOT_SUCCESS ~ SHOT_CLOCK, data = shots, 
               ngroups = 5)
 
-emplogitplot1(Make ~ CLOSE_DEF_DIST, data = shots, 
+emplogitplot1(SHOT_SUCCESS ~ CLOSE_DEF_DIST, data = shots, 
               ngroups = 10)
 
-emplogitplot1(Make ~ SHOT_DIST, data = shots, 
+emplogitplot1(SHOT_SUCCESS ~ SHOT_DIST, data = shots, 
               ngroups = 10)
 
-emplogitplot1(Make ~ TOUCH_TIME, data = shots, 
+emplogitplot1(SHOT_SUCCESS ~ TOUCH_TIME, data = shots, 
               ngroups = 10)
 
 
 shots %>%
-  count(CLOSEST_DEFENDER, Make) %>%
+  count(CLOSEST_DEFENDER, SHOT_SUCCESS) %>%
   group_by(CLOSEST_DEFENDER) %>%
   mutate(prop = n/sum(n)) %>%
-  filter(Make == "1") %>%
+  filter(SHOT_SUCCESS == "1") %>%
   mutate(emp_logit = log(prop/(1-prop)))
 
 
@@ -99,12 +112,12 @@ shots_players <- shots_players %>%
   filter(CLOSE_DEF_DIST < 5)
 
 shots_players <- shots_players %>%
-  mutate(Make = as.factor(Make))
+  mutate(SHOT_SUCCESS = as.factor(SHOT_SUCCESS))
 
 shots_players <- shots_players %>%
   mutate(CLOSEST_DEFENDER = as.factor(CLOSEST_DEFENDER))
 
-emplogitplot2(Make ~ CLOSE_DEF_DIST + CLOSEST_DEFENDER, data = shots_players)
+emplogitplot2(SHOT_SUCCESS ~ CLOSE_DEF_DIST + CLOSEST_DEFENDER, data = shots_players)
 
 ```
 
@@ -117,28 +130,28 @@ we should also look into collinearity
 ### Creating Model
 ```{r}
 
-full_mod <- glm(Make ~ SHOT_CLOCK + DRIBBLES + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST, data = shots, family = "binomial")
+full_mod <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + DRIBBLES + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST, data = shots, family = "binomial")
 
 drop1(full_mod)
 
 
-full_mod <- glm(Make ~ SHOT_CLOCK + DRIBBLES + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST + CLOSEST_DEFENDER, data = shots_players, family = "binomial")
+full_mod <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + DRIBBLES + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST + CLOSEST_DEFENDER, data = shots_players, family = "binomial")
 
 drop1(full_mod)
 
-current <- glm(Make ~ SHOT_CLOCK + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST + CLOSEST_DEFENDER, data = shots_players, family = "binomial")
+current <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST + CLOSEST_DEFENDER, data = shots_players, family = "binomial")
 drop1(current)
 
-current <- glm(Make ~ SHOT_CLOCK + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST, data = shots_players, family = "binomial")
+current <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST, data = shots_players, family = "binomial")
 drop1(current)
 
-current <- glm(Make ~ SHOT_CLOCK + SHOT_DIST + CLOSE_DEF_DIST, data = shots_players, family = "binomial")
+current <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + SHOT_DIST + CLOSE_DEF_DIST, data = shots_players, family = "binomial")
 drop1(current)
 
 
 ### testing for this interaction term
 
-current_interaction <- glm(Make ~ SHOT_CLOCK + SHOT_DIST + CLOSE_DEF_DIST + CLOSE_DEF_DIST * CLOSEST_DEFENDER, data = shots_players, family = "binomial")
+current_interaction <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + SHOT_DIST + CLOSE_DEF_DIST + CLOSE_DEF_DIST * CLOSEST_DEFENDER, data = shots_players, family = "binomial")
 
 anova(current, current_interaction, test = "Chisq") %>%
   tidy()
