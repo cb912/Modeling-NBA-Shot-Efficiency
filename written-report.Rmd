@@ -106,7 +106,7 @@ p3 <- ggplot(data=shots, aes(x = SHOT_DIST, y= CLOSE_DEF_DIST)) +
 p3
 ```
 
-
+According to this plot, there appears to be a relationship between shot distance and shot success, but not distance from defender and shot success. In the plot, there are clearly more made shots than not made shots when the shot is close to the basket, but as the shot distance goes further away there is a significant increase in proportion of missed shots as compared to made shots. On the other hand, the distance from closest defender does not appear to tell us much about the shot success as in some cases there are a higher proportion of made shots and in other cases there is a lower proportion of made shots. 
 ```{r}
 ##Checking conditions
 
@@ -150,9 +150,11 @@ emplogitplot2(SHOT_SUCCESS ~ CLOSE_DEF_DIST + CLOSEST_DEFENDER, data = shots_pla
 
 ```
 
-Linearity is not totally satisfied... graphs aren't linear
+Linearity condition is satisfied for the variables of SHOT_CLOCK and SHOT_DIST because observations appear to be symettric across the blue line. However, linearity condition for the variables CLOSE_DEF_DIST and TOUCH_TIME does not appear to be satisfied because observations do not appear to be symmetric across the line. 
 
-independence and randomness seems fine accorind to how data was collected
+The independence condition is satisfied because the shot of one person does not appear to have an affect on the shot of another person.
+
+The condition for randomness is satisfied becuase we have no reason to beleive otherwise when considering how the data was collected.
 
 we should also look into collinearity
 
@@ -163,7 +165,7 @@ full_mod <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + DRIBBLES + TOUCH_TIME + SHOT_DIST + 
 
 drop1(full_mod)
 
-
+#which full model are we ussing??? ^^^ or below
 full_mod <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + DRIBBLES + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST + CLOSEST_DEFENDER, data = shots_players, family = "binomial")
 
 drop1(full_mod)
@@ -193,6 +195,11 @@ current%>%
 ```
 
 talk about final model outcome and how we came to it
+***(Not sure what goal of final model is - ex. prediction or explanation or one variable's effect)
+
+In creating our final model we chose to conduct a backward selection procedure. Therefore, we started out with the model that included all variables that we assumed to have a significnat effect on the response variable, in this case shot success. The predictor variables we selected in our initial model were SHOT_CLOCK, CLOSEST_DEFENDER, TOUCH_TIME, SHOT_DIST, CLOSE_DEF_DIST. In terms of conducting the backward selection, we eliminated the variables based on which predictor variable resulted in the model having the lowest AIC value. When we could not eliminate anymore predictor variables from the model based on this criteria, we thus arrived on our final model. The predictors in our final model were SHOT_CLOCK, SHOT_DIST, and CLOSE_DEF_DIST. Our final model can be expressed as: 
+
+predicted SHOT_SUCCESS ~ -.737 + .026 * SHOT_CLOCK - .048 * SHOT_DISTANCE + .243 * CLOSE_DEF_DIST
 
 ###Discussion
 
