@@ -26,7 +26,7 @@ For our STA 210 Final Project, our group is interested in investigating how cert
 
 Our interest in this subject matter was piqued by an 2015 article titled “Basketball Shot Types and Shot Success in Different Levels of Competitive Basketball” published by Frane Erčulj and Erik Štrumbel. The study described the effect of different shot types on shot success across different levels of competition. It was insightful to learn that there were no discernable differences between different situational variables, such as the type of player (e.g. Center) or where he shot the ball (e.g. in the paint) on shot success between levels. Since it was demonstrated that the effect of situation variables on shot success remained constant throughout all levels of competition, we were motivated to identify what exactly these situation variables might be, and to what degree of influence they had on an individual’s shot success. 
 
-As a result, we formulated our research question: “Do certain situational variables during an NBA game have an effect on a basketball player's shot success?” Based on our prior knowledge of the game of basketball, we recognize that both players and coaches deem certain shots as “great” as "bad". Yet, what qualities characterize these shots to fall under those two distinct categories? Furthermore, through our own intuition after watching countless games and playing the sport ourselves, we hypothesize that some situational variables (e.g. shot distance from the hoop or the proximity of the closest defender) will have a greater effect on an NBA player’s shot success than other situational variables. It seems intuitive that, as the time left on the clock and distance to the defender decrease, the likelihood of making a shot increases. To what extent is this true? Seeking clarity in how these factors, amongst others, contribute to a successful shot are the key objectives of our analysis. 
+As a result, we formulated our research question: “Do certain situational variables during an NBA game have an effect on shot success?” Based on our prior knowledge of the game of basketball, we recognize that both players and coaches deem certain shots as “great” as "bad". Yet, what qualities characterize these shots to fall under those two distinct categories? Furthermore, through our own intuition after watching countless games and playing the sport ourselves, we hypothesize that some situational variables (e.g. shot distance from the hoop or the proximity of the closest defender) will have a greater effect on an NBA player’s shot success than other situational variables. It seems intuitive that, as the time left on the clock and distance to the defender decrease, the likelihood of making a shot increases. To what extent is this true? Seeking clarity in how these factors, amongst others, contribute to a successful shot are the key objectives of our analysis. 
 
 ### Data
 
@@ -44,7 +44,7 @@ The predictor variables that we expect to have an influence on the response vari
 - `SHOT_CLOCK`: Number of seconds left on the shot clock when the player shot the ball
 - `SHOT_DIST (FT)`: Distance in feet from the hoop when the player shot the ball 
 - `SHOT_RESULT`: Whether the shot was "made" or "missed"
-- `DRIBBLES`: Number of dribbles before the player shot the ball 
+- `DRIBBLES`: Number of dribbles a player took before shoointg the ball 
 - `TOUCH_TIME (SEC)`: Number of seconds before the player shot the ball (after being passed to)
 - `PTS_TYPE`: Whether the shot was 2 or 3-pointer
 - `CLOSEST_DEFENDER`: Who the closest defender was to the shooting player
@@ -64,6 +64,7 @@ shots <- shots %>%
 
 shots <- shots %>%
   mutate(SHOT_SUCCESS = as.factor(SHOT_SUCCESS))
+
 ```
 
 ```{r}
@@ -72,7 +73,7 @@ apply(apply(shots,2,is.na),2,sum)
 shots <- shots %>%
   drop_na(SHOT_CLOCK)
 ```
-Analysis of missing data reveals that only one variable contains unavailable values. To accommodate for this, we removed 5567 missing values from the dataset since they accounted for only `r 5567/128069 * 100` percent of all observations, which is an inconsequential amount. 
+Analysis of missing data reveals that only one variable contains unavailable values. This is likely because the shot clock is turned off when the game clock in the NBA is below 24 seconds. To accommodate for this, we removed 5567 missing values from the dataset since they accounted for only `r 5567/128069 * 100` percent of all observations, which is an inconsequential amount. 
 
 ### Exploratory Data Analysis
 ```{r}
@@ -96,17 +97,21 @@ p3 <- ggplot(shots, aes(x = SHOT_DIST, color = SHOT_SUCCESS)) +
 
 p1 + p2 + p3
 ```
+These graphs tell us interesting relationship about the distribution of shots in the NBA and the relationship between shot distance and success. Graph A shows us that the distribution of shots in the NBA is bimodal, with most shots either being right next to the basket (<5 feet) or pretty far from the basket (~25 ft). This is likely because the NBA three point line (the line in which shots shot behind it are worth three points instead of two) are is 24ft away from the basket. Graph B and C both help explain that closer shots tend to go in more often. This is pretty intuitive, as anyone who has played/watched basketball probably knows that it is easier to shoot when you are closer to the basket, with all else being equal.
 
 ```{r}
-p3 <- ggplot(data=shots, aes(x = SHOT_DIST, y= CLOSE_DEF_DIST)) + 
-  geom_point(aes(color=SHOT_SUCCESS)) +
+p3 <- ggplot(data=shots, aes(x = SHOT_DIST, y= CLOSE_DEF_DIST, color = SHOT_SUCCESS)) + 
+  geom_point()+
+  geom_smooth(method="lm", se = FALSE)+ 
   labs(x = "Shot distance (ft)",
        y = "Distance from closest defender (ft)",
-       title = "Made shots are closer to the basket and further away from the defender")
+       title = "Made shots are closer to the basket and further away from the defender") 
 p3
 ```
+According to this plot, there appears to be a relationship between shot distance and shot success, but not distance from defender and shot success. In the plot, there are clearly more made shots than not made shots when the shot is close to the basket, but as the shot distance goes further away there is a significant increase in proportion of missed shots as compared to made shots. On the other hand, the distance from closest defender does not appear to tell us much about the shot success when the shot is somewhat contested (nearest defender <15 feet away) as in some cases there are a higher proportion of made shots and in other cases there is a lower proportion of made shots. One interesting relationship is that shots closer to the basket have more observations where the closest defender was very far away (20-50ft). This is likely due to the fact that turnovers in basketball lead to transition layups, where the offensive player is attacking the basket uncontested. This graph also helps us explain a phenomenon from graph A earlier, as teams are likely taking shots closer to the basket because these shots are wide open (no defender nearby) in some situations.
 
-According to this plot, there appears to be a relationship between shot distance and shot success, but not distance from defender and shot success. In the plot, there are clearly more made shots than not made shots when the shot is close to the basket, but as the shot distance goes further away there is a significant increase in proportion of missed shots as compared to made shots. On the other hand, the distance from closest defender does not appear to tell us much about the shot success as in some cases there are a higher proportion of made shots and in other cases there is a lower proportion of made shots. 
+
+Checking for linearity:
 ```{r}
 ##Checking conditions
 
@@ -117,7 +122,7 @@ emplogitplot1(SHOT_SUCCESS ~ SHOT_CLOCK, data = shots,
               ngroups = 5)
 
 emplogitplot1(SHOT_SUCCESS ~ CLOSE_DEF_DIST, data = shots, 
-              ngroups = 10)
+              ngroups = 10) 
 
 emplogitplot1(SHOT_SUCCESS ~ SHOT_DIST, data = shots, 
               ngroups = 10)
@@ -132,31 +137,15 @@ shots %>%
   mutate(prop = n/sum(n)) %>%
   filter(SHOT_SUCCESS == "1") %>%
   mutate(emp_logit = log(prop/(1-prop)))
-
-
-shots_players <- shots %>%
-  filter(CLOSEST_DEFENDER == "Leonard, Kawhi"| CLOSEST_DEFENDER ==  "Curry, Stephen")
-
-shots_players <- shots_players %>%
-  filter(CLOSE_DEF_DIST < 5)
-
-shots_players <- shots_players %>%
-  mutate(SHOT_SUCCESS = as.factor(SHOT_SUCCESS))
-
-shots_players <- shots_players %>%
-  mutate(CLOSEST_DEFENDER = as.factor(CLOSEST_DEFENDER))
-
-emplogitplot2(SHOT_SUCCESS ~ CLOSE_DEF_DIST + CLOSEST_DEFENDER, data = shots_players)
-
 ```
-
-Linearity condition is satisfied for the variables of SHOT_CLOCK and SHOT_DIST because observations appear to be symettric across the blue line. However, linearity condition for the variables CLOSE_DEF_DIST and TOUCH_TIME does not appear to be satisfied because observations do not appear to be symmetric across the line. 
+Linearity condition is satisfied for the time left on the shot clock and the shot distance because observations appear to be symettric across the blue line. However, linearity condition for the distance of the closest defender and the amount of time the shooter touched the ball for does not appear to be satisfied because observations do not appear to be symmetric across the line. 
 
 The independence condition is satisfied because the shot of one person does not appear to have an affect on the shot of another person.
 
-The condition for randomness is satisfied becuase we have no reason to beleive otherwise when considering how the data was collected.
+The condition for randomness is satisfied because we have no reason to believe otherwise when considering how the data was collected.
 
 we should also look into collinearity
+
 
 ### Creating Model
 ```{r}
@@ -166,54 +155,78 @@ full_mod <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + DRIBBLES + TOUCH_TIME + SHOT_DIST + 
 drop1(full_mod)
 
 #which full model are we ussing??? ^^^ or below
-full_mod <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + DRIBBLES + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST + CLOSEST_DEFENDER, data = shots_players, family = "binomial")
+full_mod <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + DRIBBLES + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST, data = shots, family = "binomial")
 
 drop1(full_mod)
 
-current <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST + CLOSEST_DEFENDER, data = shots_players, family = "binomial")
+current <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST, data = shots, family = "binomial")
 drop1(current)
 
-current <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST, data = shots_players, family = "binomial")
+current <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + SHOT_DIST + CLOSE_DEF_DIST, data = shots, family = "binomial")
 drop1(current)
 
-current <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + SHOT_DIST + CLOSE_DEF_DIST, data = shots_players, family = "binomial")
-drop1(current)
+tidy(current)%>%
+  kable(digits = 5)
+
+```
+In creating our final model we chose to conduct a backward selection procedure. Therefore, we started out with the model that included all variables that we assumed to have a significant effect on the response variable, in this case shot success. The predictor variables we selected in our initial model were the time left on the shot clock, the closest defender, the amount of time the shooter touched/held the ball for, the distance of the shot, and the distance of the closest defender. It is important to note that the closest defender was a categorical variable with over 200 levels, so it wasn't feasible for us to use it in our model. In terms of conducting the backward selection, we eliminated the variables based on which predictor variable resulted in the model having the lowest AIC value. The resulting model had time left on the shot clock, the distance of the shot, and the distance of the closest defender
+
+```{r}
+
+current_interaction <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + SHOT_DIST + CLOSE_DEF_DIST + CLOSE_DEF_DIST * SHOT_DIST, data = shots, family = "binomial")
 
 
-### testing for this interaction term
+AIC <- glance(current_interaction)$AIC
+BIC <- glance(current_interaction)$BIC
+Value <- matrix(c(AIC, BIC),ncol=2,byrow=TRUE)
+colnames(Value) <- c("AIC", "BIC")
+kable(Value, format= "markdown", caption = "AIC & BIC of model with interaction term")
 
-current_interaction <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + SHOT_DIST + CLOSE_DEF_DIST + CLOSE_DEF_DIST * CLOSEST_DEFENDER, data = shots_players, family = "binomial")
+
+AIC <- glance(current)$AIC
+BIC <- glance(current)$BIC
+Value <- matrix(c(AIC, BIC),ncol=2,byrow=TRUE)
+colnames(Value) <- c("AIC", "BIC")
+kable(Value, format= "markdown", caption = "AIC & BIC of model without interaction term")
+
 
 anova(current, current_interaction, test = "Chisq") %>%
   tidy()
 
-current%>%
+current_interaction%>%
   tidy() %>%
-  kable(digits = 3)
-
-
+  kable(digits = 5)
+### interaction terms seems to help
 ```
+After we had created a model based on this, we wanted to explore a possible interaction term. From our EDA, we had seen that the vast majority of wide open shots (defender is 20+ feet away) were layups or shots within a few feet of the basket. So, we wanted to see if an interaction term between shot distance and the distance of the closest defender added anything to our model. After doing a drop-in deviance test and looking at AIC and BIC values, we concluded that this interaction term did indeed help the predictive value of our model.
+```{r}
+### multicollinearity
+library(rms)
+vif(current_interaction) %>% tidy()
+```
+Lastly, we checked for multicollinearity within our model, and while our interaction term did have a VIF value above 10 (indicating multicollinearity), we chose to keep the term in our model because it is somewhat expected that an interaction term will correlate with the terms it is made up from.
 
-talk about final model outcome and how we came to it
-***(Not sure what goal of final model is - ex. prediction or explanation or one variable's effect)
+The predictors in our final model were the amount of time left on the shot clock, the distance of the shot, the distance of the closest defender, and the interaction term between the distance of the closest defender and the distance of the shot. Our final model can be expressed as: 
 
-In creating our final model we chose to conduct a backward selection procedure. Therefore, we started out with the model that included all variables that we assumed to have a significnat effect on the response variable, in this case shot success. The predictor variables we selected in our initial model were SHOT_CLOCK, CLOSEST_DEFENDER, TOUCH_TIME, SHOT_DIST, CLOSE_DEF_DIST. In terms of conducting the backward selection, we eliminated the variables based on which predictor variable resulted in the model having the lowest AIC value. When we could not eliminate anymore predictor variables from the model based on this criteria, we thus arrived on our final model. The predictors in our final model were SHOT_CLOCK, SHOT_DIST, and CLOSE_DEF_DIST. Our final model can be expressed as: 
+predicted log odds of SHOT SUCCESS ~ -0.51874 + 0.02018 * SHOTCLOCK - 0.03029 * SHOT DISTANCE + 0.26408 * CLOSE DEF DIST - 0.00863 * (CLOSE DEF DIST * SHOT DISTANCE)
 
-predicted SHOT_SUCCESS ~ -.737 + .026 * SHOT_CLOCK - .048 * SHOT_DISTANCE + .243 * CLOSE_DEF_DIST
+or in terms of predicted probability
+
+predicted probability of SHOT_SUCCESS ~ exp(-0.51874 + 0.02018 * SHOT_CLOCK - 0.03029 * SHOT_DISTANCE + 0.26408 * CLOSE_DEF_DIST - 0.00863 * (CLOSE_DEF_DIST * SHOT_DISTANCE)) / (1 + (-0.51874 + 0.02018 * SHOT_CLOCK - 0.03029 * SHOT_DISTANCE + 0.26408 * CLOSE_DEF_DIST - 0.00863 * (CLOSE_DEF_DIST * SHOT_DISTANCE)))
 
 ###Discussion
 
 Limitations:
 
-1) Out of all predictor variables in analysis, only one variable had missing observations; there were 5,567 unavailable values for the variable which counted the time left on the shot clock when the player shot the ball. This may have been due to recording error or instances where the shot clock was turned off. Given that 5,567 is marginal compared to the total number of observations (128,069), we chose to remove all rows containing NAs for this variable from the dataset. As a result, The dataset wouldn't differ to a significant degree systematically compared to the larger population.
-2) The variable which quantified the number of seconds where a player touched the ball was negative 
+There a few important limitations with our analysis and model. Firstly, one variable had missing observations; there were 5,567 unavailable values for the variable which counted the time left on the shot clock when the player shot the ball. This may have been due to recording error or instances where the shot clock was turned off. Given that 5,567 is marginal compared to the total number of observations (128,069), we chose to remove all rows containing NAs for this variable from the dataset. As a result, The dataset theoretically does not differ to a significant degree systematically compared to the larger population. Secondly, there appeared to be some inconsistencies/errors with the data. One example is the fact that there was negatives values for the amount of time the player touched the ball before shooting, which shouldn't be possible as a player can not possess the ball for a negative amount of time. There was also issues with the linearity assumption with the distance of the closest defender and the amount of time the shooter touches the ball for, which could affect the validity of our model (though we did not end up using the amount of time the shooter touched for in our final model). There was also issues with collinearity between our interaction term and the terms comprising the said interaction term (the distance of the closest defender and the distance of the shot). While this might inflate the variance of our coefficients, we chose to keep the interaction term in our model because it seemed to hold significant predictive value as seen by a lower AIC and BIC when included in the model. Lastly, while we felt like the categorical variable CLOSEST_DEF might have held predictive value in our model (as some players in the NBA are considered 'better' defenders than others), there were simply too many levels (or players) for us to feasibly include in our model.
 
 Next steps:
 
-1) To address the limitation of _____, 
-2) Furthermore, an avenue we would be interested in exploring how the situational variables of making a successful shot may differ or stay the same during "clutch" scenarios, where the outcome of a game is at stake. In this case, we could explore other predictors within our model and set thresholds, such as having less than 10 seconds left during the game, being in the 4th period of the game, and having a final margin of victory of less than or equal to 3 points. Furthermore, another avenue we would be interested in exploring is the effectiveness of different defenders on a player's shot success in NBA games. In the current stage of our project, we investigated the variables that played in a role in optimizing a successful shot. Out of curiosity, how would these factors change if we explored the data from the perspective of the defender, who is attempting to prevent a player from scoring a basket? Further analysis of the distance between contested shots as well as field goal percentage could yield interesting factors that may have some degree of influence on defending a shot. Additionally, based on these characteristics and others, perhaps we could identify which NBA players constitute the "elite" class of the defensive side of basketball.
+To address the limitation of our model there are a few steps additional we would have liked to take. Firstly, to account for the fact that there were missing values for the time left on shot clock, we might look to replace time left on the shot clock with the time left in the quarter (if less than 24 seconds). It seems very likely that the missing values for the time left on the shot clock come from the fact that the shot clock is turned off when there's less than 24 seconds left in an NBA quarter. So, if we had data that included the amount of time left in the quarter, we could replace shot clock values for the amount of time left in the quarter in the instances when there was 24 seconds or less left in the quarter. In order to work around the fact that there are too many individual NBA players to include the closest defender in our model, it might make sense to replace that categorical variable with a continous one that is reflective of defense capabilities. We would have liked to add a continuous variable like defense rating (a quantative measure of a player's defense abilities) in order to see how that affects shot success. 
 
-Talk about our results, the limitations of these results, and what'd we do differently...
+Furthermore, there are additional avenues we'd like to explore in our analysis. One we would be interested in is using player height (or the difference in height of the shooting player and closest defender) affects shot success, as players sometimes have to change their release to shoot over taller players in the NBA. Alternatively, something like the difference in wingspan could be used. Another avenue we'd be interested in exploring how the situational variables of making a successful shot may differ or stay the same during "clutch" scenarios, where the outcome of a game is at stake. In this case, we could explore other predictors within our model and set thresholds, such as having less than 10 seconds left during the game, being in the 4th period of the game, and having a final margin of victory of less than or equal to 3 points. Furthermore, another avenue we would be interested in exploring is the effectiveness of different defenders on a player's shot success in NBA games. In the current stage of our project, we investigated the variables that played in a role in optimizing a successful shot. Out of curiosity, how would these factors change if we explored the data from the perspective of the defender, who is attempting to prevent a player from scoring a basket? Further analysis of the distance between contested shots as well as field goal percentage could yield interesting factors that may have some degree of influence on defending a shot. Additionally, based on these characteristics and others, perhaps we could identify which NBA players constitute the "elite" class of the defensive side of basketball.
+
+
 
 ###References
 
