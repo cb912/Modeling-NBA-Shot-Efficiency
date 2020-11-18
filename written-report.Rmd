@@ -45,9 +45,7 @@ The predictor variables that we expect to have an influence on the response vari
 - `SHOT_CLOCK`: Number of seconds left on the shot clock when the player shot the ball.
 - `SHOT_DIST`: Distance in feet from the hoop when the player shot the ball.
 - `SHOT_RESULT`: Description of shot, either "made" or "missed".
-- `DRIBBLES`: Number of dribbles the player took before shooting the ball.
 - `TOUCH_TIME`: Number of seconds before the player shot the ball after being passed to.
-- `PTS_TYPE`: Type of shot, either a 2 or 3-pointer.
 - `CLOSEST_DEFENDER`: Who the closest defender was to the shooting player.
 - `CLOSE_DEF_DIST`: Number of feet the defender was from the player when the ball was shot.
 
@@ -257,57 +255,69 @@ current_interaction1%>%
 ### interaction terms seems to help
 ```
 
-After doing a drop-in deviance test and looking at AIC and BIC values, we concluded that this interaction term did indeed help the predictive value of our model.
+After doing a drop-in deviance test and looking at AIC and BIC values, we concluded that this interaction term did indeed help the predictive value of our model and added it as a predictor to the response variable.
+
+```{r}
+final_shots_model <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + SHOT_DIST + CLOSE_DEF_DIST + CLOSE_DEF_DIST * SHOT_DIST, data = shots, family = "binomial")
+```
 
 ## Model Conditions
 
 The next step in our analysis is checking the model conditions. Given that our model is a logistic regression model, we should check three conditions: linearity, randomness, and independence.
 
 ### Linearity 
+
+We evaluate the linearity condition by calculating the empirical logit plots for all quantitative predictors from our model. Note, we excluded the variable which characterized each defender's name (`CLOSEST_DEFENDER`) as it was a categorical variable with over 200 levels, so it wasn't feasible for us to use it in our model, which was why we excluded it from the model and model conditions analysis. 
+
 ```{r}
 ##Checking conditions
 
 ### Linearity
 library(Stat2Data)
-
-ep1 <- emplogitplot1(SHOT_SUCCESS ~ SHOT_CLOCK, data = shots, 
-              ngroups = 5)
-
-ep2 <- emplogitplot1(SHOT_SUCCESS ~ CLOSE_DEF_DIST, data = shots, 
-              ngroups = 10) 
-
-ep3 <- emplogitplot1(SHOT_SUCCESS ~ SHOT_DIST, data = shots, 
-              ngroups = 10)
-
-ep4 <- emplogitplot1(SHOT_SUCCESS ~ TOUCH_TIME, data = shots, 
-              ngroups = 10)
-
-ep1 + ep2
-ep3 
 ```
 
 ```{r}
-shots %>%
-  count(CLOSEST_DEFENDER, SHOT_SUCCESS) %>%
-  group_by(CLOSEST_DEFENDER) %>%
-  mutate(prop = n/sum(n)) %>%
-  filter(SHOT_SUCCESS == "1") %>%
-  mutate(emp_logit = log(prop/(1-prop))) %>%
-  kable(digits=3) %>%
-  kable_styling(position = "center")
+ep1 <- emplogitplot1(SHOT_SUCCESS ~ SHOT_CLOCK, data = shots, 
+              ngroups = 5)
+ep1
 ```
+Linearity conditions are satisfied for the time left on the shot clock (`SHOT_CLOCK`) because the log-odds have a linear relationship with the predictor. 
 
-Linearity condition is satisfied for the time left on the shot clock and the shot distance because observations appear to be symmetric across the blue line. However, linearity condition for the distance of the closest defender and the amount of time the shooter touched the ball for does not appear to be satisfied because observations do not appear to be symmetric across the line. While the condition is not satisfied, it is intuitive to understand that the observations varied significantly in terms of duration, and furthermore, this predictor was not included in the final edition of our model.
+```{r}
+ep2 <- emplogitplot1(SHOT_SUCCESS ~ CLOSE_DEF_DIST, data = shots, 
+              ngroups = 10) 
+ep2
+```
+Linearity conditions are satisfied for the distance to the closest defender (`CLOSE_DEF_DIST`) because the log-odds still have a negative linear relationship with the predictor, despite it being very weak. 
+
+```{r}
+ep3 <- emplogitplot1(SHOT_SUCCESS ~ SHOT_DIST, data = shots, 
+              ngroups = 10)
+ep3
+```
+Linearity conditions are satisfied for the distance of the shot (`SHOT_DIST`) because the log-odds have a negative linear relationship with the predictor.
+
+```{r}
+ep4 <- emplogitplot1(SHOT_SUCCESS ~ TOUCH_TIME, data = shots, 
+              ngroups = 10)
+
+ep4
+```
+Linearity conditions are satisfied for the distance of the shot (`SHOT_DIST`) because the log-odds have a negative linear relationship with the predictor.
 
 ### Independence 
-The independence condition is satisfied because the shot of one NBA basketball player does not appear to have an affect on the shot of another NBA basketball player
+The independence condition is satisfied because the shot of one NBA basketball player does not appear to have an affect on the shot of another NBA basketball player.
 
 ### Randomness
 The condition for randomness is satisfied because we have no reason to believe otherwise when considering how the data was collected, given the fact that all statistical game history was recorded from the 2014-2015 season. 
 
-### Model Diagnostics
+## Model Diagnostics
 
-To adequately check model diagonistics, we also interpreted the multicollinearity of the model. 
+The next step in our analysis is evaluating the model diagonostics.
+
+### Multicollinearity
+
+To adequately check model diagonistics, we interpreted the multicollinearity of the model. 
 
 ```{r}
 ### multicollinearity
@@ -317,15 +327,27 @@ vif(current_interaction1) %>%
   kable_styling(position = "center")
 ```
 
-While our interaction term did have a VIF value above 10 (indicating multicollinearity), we chose to keep the term in our model because it is somewhat expected that an interaction term will correlate with the terms it is made up from.
+While our interaction term did have a Variance Inflation Factor (VIF) value of 16.244, which is greater than 10 (indicating multicollinearity), we chose to keep the term in our model for several reasons. First, being that it is somewhat expected that an interaction term will correlate with the terms it is made up from. Second, given that the multicollinearity value was only off by single digits, we felt that it was necessary to include in the model, especially considering it was significant according to the interaction procedure we had conducted using AIC as a criterion earlier.
+
+### Final Model and Results
 
 The predictors in our final model were the amount of time left on the shot clock, the distance of the shot, the distance of the closest defender, and the interaction term between the distance of the closest defender and the distance of the shot. Our final model can be expressed as: 
 
-predicted log odds of SHOT SUCCESS ~ -0.51874 + 0.02018 * SHOTCLOCK - 0.03029 * SHOT DISTANCE + 0.26408 * CLOSE DEF DIST - 0.00863 * (CLOSE DEF DIST * SHOT DISTANCE)
+```{r}
+tidy(final_shots_model, conf.int = TRUE) %>%
+  kable(digit = 3)%>%
+  kable_styling(position = "center")
+```
+
+The results show that in our final model, we have three predictors and one interaction term that were ultimately selected to predict shot success. All predictors, including the interaction term, were statistically significant as their p-value was nearly zero and below our established alpha threshold of 0.05. As the model predicts, if the distance between a player and the basket increases by 1 foot, we expect the shot success of a basketball player to multiply by a factor of exp(-0.030), holding all else constant. This aligns with our intuitive sense established earlier in our analysis; as the distance between player and the basket increases, it is generally more difficult for the player to make the shot. However, it is noticed that the model predicts that as the distance to the closest defender increases by one foot, we expect the shot success of a basketball player to multiply by a factor of exp(0.264). While this seems counterintuitive at first, further analysis of relationship between the defender and the player and points scored makes greater sense. The majority of shots taken in the paint are heavily guarded as the EDA between shot success and distance to closest defender demonstrated, despite there being successfully scored baskets. Consequently, it is understandable that the closer the defender, there is an increased liklihood that the shot is going to be scored. Thus, to answer our research question based on our analysis stated during our introduction, we can conclude that there are indeed situational variables in-game that can affect the outcome of a shot in an NBA game. While some variables may help facilitate scoring a basket, proven by the log-odds of the time left on the clock and the distance closest to the defender, there are also factors that decrease the chance of shot success. This was exemplified by the distance of the shot from the basket, and the interaction between the shot distance along with the distance to the closest defender. 
+
+Below illustrates the formula, including all variable coefficients, for our model: 
+
+Predicted log odds of SHOT SUCCESS ~ -0.51874 + 0.02018 * SHOTCLOCK - 0.03029 * SHOT DISTANCE + 0.26408 * CLOSE DEF DIST - 0.00863 * (CLOSE DEF DIST * SHOT DISTANCE)
 
 or in terms of predicted probability
 
-predicted probability of SHOT_SUCCESS ~ exp(-0.51874 + 0.02018 * SHOT_CLOCK - 0.03029 * SHOT_DISTANCE + 0.26408 * CLOSE_DEF_DIST - 0.00863 * (CLOSE_DEF_DIST * SHOT_DISTANCE)) / (1 + (-0.51874 + 0.02018 * SHOT_CLOCK - 0.03029 * SHOT_DISTANCE + 0.26408 * CLOSE_DEF_DIST - 0.00863 * (CLOSE_DEF_DIST * SHOT_DISTANCE)))
+Predicted probability of SHOT_SUCCESS ~ exp(-0.51874 + 0.02018 * SHOT_CLOCK - 0.03029 * SHOT_DISTANCE + 0.26408 * CLOSE_DEF_DIST - 0.00863 * (CLOSE_DEF_DIST * SHOT_DISTANCE)) / (1 + (-0.51874 + 0.02018 * SHOT_CLOCK - 0.03029 * SHOT_DISTANCE + 0.26408 * CLOSE_DEF_DIST - 0.00863 * (CLOSE_DEF_DIST * SHOT_DISTANCE)))
 
 ### Discussion
 
