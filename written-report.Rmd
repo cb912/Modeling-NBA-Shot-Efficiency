@@ -1,14 +1,17 @@
 ---
 title: "Modeling Shot Efficiency in the NBA "
-author: "Stat guys: Lewis Eatherton, Chris Yang, Charlie Bonetti"
+author: "Stat Guys: Lewis Eatherton, Chris Yang, Charlie Bonetti"
 date: "11/17/2020"
 output: pdf_document
 ---
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, 
                       warning = FALSE, 
                       message = FALSE)
+```
+
+
+```{r load-packages, warning = F, message = F}
 library(patchwork)
 library(tidyverse)
 library(knitr)
@@ -39,7 +42,6 @@ The response variable we are interested in investigating is:
 
 The predictor variables that we expect to have an influence on the response variable are:
 
-- `SHOT_NUMBER`: Shot number for a given player in a specific game (e.g. 8 denotes the player’s 8th shot in game).
 - `SHOT_CLOCK`: Number of seconds left on the shot clock when the player shot the ball.
 - `SHOT_DIST`: Distance in feet from the hoop when the player shot the ball.
 - `SHOT_RESULT`: Description of shot, either "made" or "missed".
@@ -48,7 +50,6 @@ The predictor variables that we expect to have an influence on the response vari
 - `PTS_TYPE`: Type of shot, either a 2 or 3-pointer.
 - `CLOSEST_DEFENDER`: Who the closest defender was to the shooting player.
 - `CLOSE_DEF_DIST`: Number of feet the defender was from the player when the ball was shot.
-- `Player_name`: Who shot the ball.
 
 ```{r}
 # glimpse(shots)
@@ -98,10 +99,11 @@ shots %>%
 
 Now, we proceed to perform EDA on the predictor variables. Of particular interest are `SHOT_DIST` and `CLOSE_DEF_DIST`, which represent the distance in feet from the hoop when the player shot the ball and the number of feet the defender was from the player when the ball was shot, respectively. 
 
-                                              Summary Statistics of `SHOT_DIST`:
+Summary Statistics of `SHOT_DIST`:
 
 ```{r}
 shots %>%
+  group_by(SHOT_SUCCESS) %>%
   summarise(min = min(SHOT_DIST),
             max = max(SHOT_DIST),
             mean = mean(SHOT_DIST), 
@@ -112,14 +114,14 @@ shots %>%
             kable_styling(position = "center")
 ```
 
-Include summary statistics here
+For the predictor variable that measures the distance to the basket (`SHOT_DIST`), we observed that the median shot distance for a missed shot was nearly twice as large (16.7 feet) as the median for a made shot (8.6 feet). While the minimum values for a missed and made shot were both zero, the maximum value for a missed shot (43.5 feet) was greater than that of a made shot (39.8 feet). The spread across both groups was relatively large, at 16.9 feet and 16.8 feet respectively. This suggests that type of shots taken during the 2014-2015 NBA season were of a wide variety, including both close-up shots (e.g. lay-ups) as well as long-distance shots (e.g. 3-pointers).
 
 ```{r}
 p1 <- ggplot(data = shots, aes(x = SHOT_DIST), freq = TRUE) +
   geom_histogram(fill = "darkorange2") +
   labs(x = "Shot Distance (ft)",
        y = 'Number of Shots',
-       title = "Distribution of Shots")
+       title = "Distribution of Shots is Bimodal")
 
 p2 <- ggplot(data = shots, aes(x = SHOT_SUCCESS, y = SHOT_DIST)) +
   geom_boxplot(fill = "darkorange2") + 
@@ -129,24 +131,23 @@ p2 <- ggplot(data = shots, aes(x = SHOT_SUCCESS, y = SHOT_DIST)) +
 
 p1 + p2 
 ```
-These graphs tell us interesting relationship about the distribution of shots in the NBA and the relationship between shot distance and success. Graph A shows us that the distribution of shots in the NBA is bimodal, with most shots either being right next to the basket (<5 feet) or pretty far from the basket (~25 ft). This is likely because the NBA three point line (the line in which shots shot behind it are worth three points instead of two) are is 24ft away from the basket. 
+These graphs tell us interesting relationship about the distribution of shots in the NBA and the relationship between shot distance and success. The plot for Shot Distance versus Number of Shots shows us that the distribution of shots in the NBA is bimodal and aysmmetrical, with most shots either being right next to the basket (<5 feet) or pretty far from the basket (~25 ft). This is likely because the NBA three point line (the line in which shots shot behind it are worth three points instead of two) is 24ft away from the basket. 
+
+In the plot for Shot Success versus Shot Distance, there seems to be a very similar spread in shot distance between a shot made and and a shot missed. The medians appear to be noticeably different from one another as the median shot distance for missed shots is significantly greater than that of made shots. Lastly, there are no noticeable outliers presented in the boxplot.
 
 ```{r}
-p3 <- ggplot(shots, aes(x = SHOT_DIST, color = SHOT_SUCCESS)) + 
-  geom_density() +
-  labs(x = "Shot Distance (ft)",
-       y = "Proportion",
-       title = "Density of 2-point shots versus 3-point shots")
-
-p3
+# p3 <- ggplot(shots, aes(x = SHOT_DIST, color = SHOT_SUCCESS)) + 
+  #geom_density() +
+  #labs(x = "Shot Distance (ft)",
+     #  y = "Proportion",
+     #  title = "Density of 2-point shots versus 3-point shots")
+#p3
 ```
-
-Graph B and C both help explain that closer shots tend to go in more often. This is pretty intuitive, as anyone who has played/watched basketball probably knows that it is easier to shoot when you are closer to the basket, with all else being equal.
-
-                                          Summary Statistics of `CLOSE_DEF_DIST`:
+Summary Statistics of `CLOSE_DEF_DIST`:
 
 ```{r}
 shots %>%
+  group_by(SHOT_SUCCESS) %>%
   summarise(min = min(CLOSE_DEF_DIST),
             max = max(CLOSE_DEF_DIST),
             mean = mean(CLOSE_DEF_DIST), 
@@ -157,17 +158,27 @@ shots %>%
             kable_styling(position = "center")
 ```
 
-Include summary statistics here
+For the predictor variable that measures the distance to the closest defender (`CLOSE_DEF_DIST`), we observed that the median shot distance was roughly the same for both made and missed shots at 3.7 feet and 3.6 feet respectively. However, while the minimum distances between the closet defender to a player were both zero, the maximum distance for a made shot (53.2) was nearly 2 times than that of a missed shot (28.0 feet). This suggests that a decreased distance to the closest defender meant that a shot was more likely to be made. Additionally, the spread across both groups was relatively small, at 3.0 feet and 2.9 feet respectively. 
 
 ```{r}
 p4 <- ggplot(data = shots, aes(x = CLOSE_DEF_DIST), freq = TRUE) +
   geom_histogram(fill = "darkorange2", binwidth=1) +
   labs(x = "Distance to Closest Defender (ft)",
        y = 'Number of Shots',
-       title = "Distribution of shots based on closest distance to defender")
+       title = "Distribution of Closest Distances to Defender is Right-Skewed")
+
+p5 <- ggplot(data = shots, aes(x = SHOT_SUCCESS, y = CLOSE_DEF_DIST)) +
+  geom_boxplot(fill = "darkorange2") + 
+  labs(x = "Shot Success", 
+       y = "Distance to Closest Defender (ft)",
+       title = "Distance to Closest Defender vs. Shot Success contains outliers, similar median")
+
 p4
+p5
 ```
-Talk about distribution 
+In the histogram of Number of Shots versus the Distance to Closest Defender, the distribution is clearly right skewed and unimodal. An interesting relationship illustrated by these graphs is that at most times, there is a nearby defender guarding the player. However, there also exist circumstances in which the closest defender is significantly very far away, which is why the graph appears to be concentrated towards the left; this could occur in cases where there is a fast-break scenario, when the player quickly escapes the defender, or when the player decides to take a shot at the end of the quarter. 
+
+In the boxplot for Shot Success versus Shot Distance, there seems to be a very similar spread between a shot made and the distance to the closest defender. The medians appear to be noticeably similar from one another. Lastly, there are plenty of outliers across both shots that are made and missed, which informs us that many of the shots tended to differ in distance from the average, which is why the median was a better measurement for this predictor. An interesting relationship is that while the median distance of a made or missed shot was the same considering the distance to the closest defender, a greater number of made shots occurred at a distance further away from the defender. 
 
 ```{r}
 p6 <- ggplot(data=shots, aes(x = SHOT_DIST, y= CLOSE_DEF_DIST, color = SHOT_SUCCESS)) + 
@@ -179,37 +190,50 @@ p6 <- ggplot(data=shots, aes(x = SHOT_DIST, y= CLOSE_DEF_DIST, color = SHOT_SUCC
 p6
 ```
 
-According to this plot, there appears to be a relationship between shot distance and shot success, but not distance from defender and shot success. In the plot, there are clearly more made shots than not made shots when the shot is close to the basket, but as the shot distance goes further away there is a significant increase in proportion of missed shots as compared to made shots. On the other hand, the distance from closest defender does not appear to tell us much about the shot success when the shot is somewhat contested (nearest defender <15 feet away) as in some cases there are a higher proportion of made shots and in other cases there is a lower proportion of made shots. One interesting relationship is that shots closer to the basket have more observations where the closest defender was very far away (20-50ft). This is likely due to the fact that turnovers in basketball lead to transition layups, where the offensive player is attacking the basket uncontested. This graph also helps us explain a phenomenon from graph A earlier, as teams are likely taking shots closer to the basket because these shots are wide open (no defender nearby) in some situations.
+According to this plot, there appears to be a relationship between shot distance and shot success, but not distance from defender and shot success. In the plot, there are clearly more made shots than not made shots when the shot is close to the basket, but as the shot distance goes further away there is a significant increase in proportion of missed shots as compared to made shots. On the other hand, the distance from closest defender does not appear to tell us much about the shot success when the shot is somewhat contested (nearest defender <15 feet away) as in some cases there are a higher proportion of made shots and in other cases there is a lower proportion of made shots. One interesting relationship is that shots closer to the basket have more observations where the closest defender was very far away (20-50ft). This is likely due to the fact that turnovers in basketball lead to transition layups, where the offensive player is attacking the basket uncontested. This graph also helps us explain a phenomenon from earlier, as teams are likely taking shots closer to the basket because these shots are wide open (no defender nearby) in some situations.
 
-### Methodology
+## Methodology
 
 After gathering meaningful insight into the predictor variables and response variable through EDA, we proceed to the next step of our analysis, which is the modeling process. The model diagnostics as well as conditions were evaluated to ensure that our model selection was appropriate. 
 
-We chose to utilize a linear regression model to fit the different predictor variables to `SHOT_SUCCESS`, which is a binary response variable. 
+### Model Selection
+
+We thoughtfully chose to utilize a linear regression model to fit the different predictor variables to our response variable, which indicates whether or not the NBA player scored the shot. Given that it is a binary response variable, using linear regression was most fitting for our project. 
+
+To obtain our final model, we chose to conduct a backward selection procedure. Therefore, we started out with the model that included all seven predictor variables that we assumed to have a significant effect on the response variable. The predictor variables we selected in our initial model were the time left on the shot clock (`SHOT_CLOCK`), the distance of the shot (`SHOT_DIST`), the amount of time the shooter touched/held the ball for (`TOUCH_TIME`), and the distance of the closest defender (`CLOSE_DEF_DIST`), and whether the shot was a 2-pointer or 3-pointer (`PTS_TYPE`). It is important to note that the closest defender was a categorical variable with over 200 levels, so it wasn't feasible for us to use it in our model, which was why we excluded it from the model.
 
 ```{r}
-full_mod <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + DRIBBLES + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST, data = shots, family = "binomial")
+full_mod <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + SHOT_DIST + DRIBBLES + TOUCH_TIME + PTS_TYPE + CLOSE_DEF_DIST, data = shots, family = "binomial")
 
-drop1(full_mod)
-
-current <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST, data = shots, family = "binomial")
-drop1(current)
-
-current <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + SHOT_DIST + CLOSE_DEF_DIST, data = shots, family = "binomial")
-drop1(current)
-
-tidy(current)%>%
-  kable(digits = 5)
+full_mod %>% 
+  tidy() %>% 
+  kable(digits=3) %>%
+  kable_styling(position = "center")
 ```
-In creating our final model we chose to conduct a backward selection procedure. Therefore, we started out with the model that included all variables that we assumed to have a significant effect on the response variable, in this case shot success. The predictor variables we selected in our initial model were the time left on the shot clock, the closest defender, the amount of time the shooter touched/held the ball for, the distance of the shot, and the distance of the closest defender. It is important to note that the closest defender was a categorical variable with over 200 levels, so it wasn't feasible for us to use it in our model. In terms of conducting the backward selection, we eliminated the variables based on which predictor variable resulted in the model having the lowest AIC value. The resulting model had time left on the shot clock, the distance of the shot, and the distance of the closest defender
+
+In terms of conducting the backward selection, we eliminated the variables based on which predictor variable resulted in the model having the lowest AIC value. The resulting model had time left on the shot clock, the distance of the shot, and the distance of the closest defender.
 
 ```{r}
+current <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + SHOT_DIST + CLOSE_DEF_DIST, data = shots, family = "binomial")
 
-current_interaction <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + SHOT_DIST + CLOSE_DEF_DIST + CLOSE_DEF_DIST * SHOT_DIST, data = shots, family = "binomial")
+current %>% 
+  tidy() %>% 
+  kable(digits=3) %>%
+  kable_styling(position = "center")
+```
+
+### Interaction Terms
+
+After we had created an initial model, the next step towards creating a final model is exploring inclusion of possible interaction terms.
+
+- `CLOSE_DEF_DIST`*`SHOT_DIST`: From our EDA, it was demonstrated that the vast majority of wide open shots (where the closest defender to the player was greater than 20 feet away) were lay-ups, or shots within a few feet of the basket. Therefore, the effect of shot distance on shot success may depend on the distance of the player to the closest defender.
+
+```{r}
+current_interaction1 <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + SHOT_DIST + CLOSE_DEF_DIST + CLOSE_DEF_DIST * SHOT_DIST, data = shots, family = "binomial")
 
 
-AIC <- glance(current_interaction)$AIC
-BIC <- glance(current_interaction)$BIC
+AIC <- glance(current_interaction1)$AIC
+BIC <- glance(current_interaction1)$BIC
 Value <- matrix(c(AIC, BIC),ncol=2,byrow=TRUE)
 colnames(Value) <- c("AIC", "BIC")
 kable(Value, format= "markdown", caption = "AIC & BIC of model with interaction term")
@@ -221,60 +245,79 @@ Value <- matrix(c(AIC, BIC),ncol=2,byrow=TRUE)
 colnames(Value) <- c("AIC", "BIC")
 kable(Value, format= "markdown", caption = "AIC & BIC of model without interaction term")
 
-
-anova(current, current_interaction, test = "Chisq") %>%
-  tidy()
-
-current_interaction%>%
+anova(current, current_interaction1, test = "Chisq") %>%
   tidy() %>%
-  kable(digits = 5)
+  kable(digits = 3) %>%
+  kable_styling(position = "center")
+
+current_interaction1%>%
+  tidy() %>%
+  kable(digits = 5) %>%
+  kable_styling(position = "center")
 ### interaction terms seems to help
 ```
-After we had created a model based on this, we wanted to explore a possible interaction term. From our EDA, we had seen that the vast majority of wide open shots (defender is 20+ feet away) were layups or shots within a few feet of the basket. So, we wanted to see if an interaction term between shot distance and the distance of the closest defender added anything to our model. After doing a drop-in deviance test and looking at AIC and BIC values, we concluded that this interaction term did indeed help the predictive value of our model.
 
+After doing a drop-in deviance test and looking at AIC and BIC values, we concluded that this interaction term did indeed help the predictive value of our model.
 
-Checking for linearity:
+## Model Conditions
+
+The next step in our analysis is checking the model conditions. Given that our model is a logistic regression model, we should check three conditions: linearity, randomness, and independence.
+
+### Linearity 
 ```{r}
 ##Checking conditions
 
 ### Linearity
 library(Stat2Data)
 
-emplogitplot1(SHOT_SUCCESS ~ SHOT_CLOCK, data = shots, 
+ep1 <- emplogitplot1(SHOT_SUCCESS ~ SHOT_CLOCK, data = shots, 
               ngroups = 5)
 
-emplogitplot1(SHOT_SUCCESS ~ CLOSE_DEF_DIST, data = shots, 
+ep2 <- emplogitplot1(SHOT_SUCCESS ~ CLOSE_DEF_DIST, data = shots, 
               ngroups = 10) 
 
-emplogitplot1(SHOT_SUCCESS ~ SHOT_DIST, data = shots, 
+ep3 <- emplogitplot1(SHOT_SUCCESS ~ SHOT_DIST, data = shots, 
               ngroups = 10)
 
-emplogitplot1(SHOT_SUCCESS ~ TOUCH_TIME, data = shots, 
+ep4 <- emplogitplot1(SHOT_SUCCESS ~ TOUCH_TIME, data = shots, 
               ngroups = 10)
 
+ep1 + ep2
+ep3 
+```
 
+```{r}
 shots %>%
   count(CLOSEST_DEFENDER, SHOT_SUCCESS) %>%
   group_by(CLOSEST_DEFENDER) %>%
   mutate(prop = n/sum(n)) %>%
   filter(SHOT_SUCCESS == "1") %>%
-  mutate(emp_logit = log(prop/(1-prop)))
+  mutate(emp_logit = log(prop/(1-prop))) %>%
+  kable(digits=3) %>%
+  kable_styling(position = "center")
 ```
-Linearity condition is satisfied for the time left on the shot clock and the shot distance because observations appear to be symettric across the blue line. However, linearity condition for the distance of the closest defender and the amount of time the shooter touched the ball for does not appear to be satisfied because observations do not appear to be symmetric across the line. 
 
-The independence condition is satisfied because the shot of one person does not appear to have an affect on the shot of another person.
+Linearity condition is satisfied for the time left on the shot clock and the shot distance because observations appear to be symmetric across the blue line. However, linearity condition for the distance of the closest defender and the amount of time the shooter touched the ball for does not appear to be satisfied because observations do not appear to be symmetric across the line. While the condition is not satisfied, it is intuitive to understand that the observations varied significantly in terms of duration, and furthermore, this predictor was not included in the final edition of our model.
 
-The condition for randomness is satisfied because we have no reason to believe otherwise when considering how the data was collected.
+### Independence 
+The independence condition is satisfied because the shot of one NBA basketball player does not appear to have an affect on the shot of another NBA basketball player
 
-we should also look into collinearity
+### Randomness
+The condition for randomness is satisfied because we have no reason to believe otherwise when considering how the data was collected, given the fact that all statistical game history was recorded from the 2014-2015 season. 
 
+### Model Diagnostics
+
+To adequately check model diagonistics, we also interpreted the multicollinearity of the model. 
 
 ```{r}
 ### multicollinearity
 library(rms)
-vif(current_interaction) %>% tidy()
+vif(current_interaction1) %>% 
+  kable(digits=3) %>%
+  kable_styling(position = "center")
 ```
-Lastly, we checked for multicollinearity within our model, and while our interaction term did have a VIF value above 10 (indicating multicollinearity), we chose to keep the term in our model because it is somewhat expected that an interaction term will correlate with the terms it is made up from.
+
+While our interaction term did have a VIF value above 10 (indicating multicollinearity), we chose to keep the term in our model because it is somewhat expected that an interaction term will correlate with the terms it is made up from.
 
 The predictors in our final model were the amount of time left on the shot clock, the distance of the shot, the distance of the closest defender, and the interaction term between the distance of the closest defender and the distance of the shot. Our final model can be expressed as: 
 
@@ -284,7 +327,7 @@ or in terms of predicted probability
 
 predicted probability of SHOT_SUCCESS ~ exp(-0.51874 + 0.02018 * SHOT_CLOCK - 0.03029 * SHOT_DISTANCE + 0.26408 * CLOSE_DEF_DIST - 0.00863 * (CLOSE_DEF_DIST * SHOT_DISTANCE)) / (1 + (-0.51874 + 0.02018 * SHOT_CLOCK - 0.03029 * SHOT_DISTANCE + 0.26408 * CLOSE_DEF_DIST - 0.00863 * (CLOSE_DEF_DIST * SHOT_DISTANCE)))
 
-###Discussion
+### Discussion
 
 Limitations:
 
@@ -296,6 +339,28 @@ To address the limitation of our model there are a few steps additional we would
 
 Furthermore, there are additional avenues we'd like to explore in our analysis. One we would be interested in is using player height (or the difference in height of the shooting player and closest defender) affects shot success, as players sometimes have to change their release to shoot over taller players in the NBA. Alternatively, something like the difference in wingspan could be used. Another avenue we'd be interested in exploring how the situational variables of making a successful shot may differ or stay the same during "clutch" scenarios, where the outcome of a game is at stake. In this case, we could explore other predictors within our model and set thresholds, such as having less than 10 seconds left during the game, being in the 4th period of the game, and having a final margin of victory of less than or equal to 3 points. Furthermore, another avenue we would be interested in exploring is the effectiveness of different defenders on a player's shot success in NBA games. In the current stage of our project, we investigated the variables that played in a role in optimizing a successful shot. Out of curiosity, how would these factors change if we explored the data from the perspective of the defender, who is attempting to prevent a player from scoring a basket? Further analysis of the distance between contested shots as well as field goal percentage could yield interesting factors that may have some degree of influence on defending a shot. Additionally, based on these characteristics and others, perhaps we could identify which NBA players constitute the "elite" class of the defensive side of basketball.
 
-###References
+### References
 
 (1) Erčulj F, Štrumbelj E (2015) Basketball Shot Types and Shot Success in Different Levels of Competitive Basketball. PLoS ONE 10(6): e0128885. https://doi.org/10.1371/journal.pone.0128885
+
+### Appendix
+
+Backward Selection Output
+
+```{r}
+full_mod <- glm(SHOT_SUCCESS ~ SHOT_NUMBER + SHOT_CLOCK + SHOT_DIST + DRIBBLES + TOUCH_TIME + PTS_TYPE + CLOSE_DEF_DIST, data = shots, family = "binomial")
+drop1(full_mod)
+
+current <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + DRIBBLES + TOUCH_TIME + SHOT_DIST + PTS_TYPE + CLOSE_DEF_DIST, data = shots, family = "binomial")
+drop1(current)
+
+current <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + DRIBBLES + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST, data = shots, family = "binomial")
+drop1(current)
+
+current <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + TOUCH_TIME + SHOT_DIST + CLOSE_DEF_DIST, data = shots, family = "binomial")
+drop1(current)
+
+current <- glm(SHOT_SUCCESS ~ SHOT_CLOCK + SHOT_DIST + CLOSE_DEF_DIST, data = shots, family = "binomial")
+```
+```
+
